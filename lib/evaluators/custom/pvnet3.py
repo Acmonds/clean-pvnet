@@ -11,54 +11,7 @@ if cfg.test.icp:
 from PIL import Image
 from lib.utils.img_utils import read_depth
 from scipy import spatial
-import math
 
-def isRotationMatrix(R) :
-    Rt = np.transpose(R)
-    shouldBeIdentity = np.dot(Rt, R)
-    I = np.identity(3, dtype = R.dtype)
-    n = np.linalg.norm(I - shouldBeIdentity)
-    return n < 10000*1e-6
-
-# Calculates rotation matrix to euler angles
-# The result is the same as MATLAB except the order
-# of the euler angles ( x and z are swapped ).
-
-def rotationMatrixToEulerAngles(R) :
-
-    assert(isRotationMatrix(R))
-
-    sy = math.sqrt(R[0,0] * R[0,0] +  R[1,0] * R[1,0])
-
-    singular = sy < 1e-6
-
-    if  not singular :
-        x = math.atan2(R[2,1] , R[2,2])
-        y = math.atan2(-R[2,0], sy)
-        z = math.atan2(R[1,0], R[0,0])
-    else :
-        x = math.atan2(-R[1,2], R[1,1])
-        y = math.atan2(-R[2,0], sy)
-        z = 0
-
-    # return np.array([x, y, z])
-    return np.rad2deg([x, y, z])
-
-def re(R_est, R_gt):
-    """Rotational Error.
-    :param R_est: 3x3 ndarray with the estimated rotation matrix.
-    :param R_gt: 3x3 ndarray with the ground-truth rotation matrix.
-    :return: The calculated error.
-    """
-    assert R_est.shape == R_gt.shape == (3, 3)
-    rotation_diff = np.dot(R_est, R_gt.T)
-    trace = np.trace(rotation_diff)
-    trace = trace if trace <= 3 else 3
-    # Avoid invalid values due to numerical errors
-    error_cos = min(1.0, max(-1.0, 0.5 * (trace - 1.0)))
-    rd_deg = np.rad2deg(np.arccos(error_cos))
-
-    return rd_deg
 
 class Evaluator:
 
@@ -77,28 +30,8 @@ class Evaluator:
         self.add = []
         self.icp_add = []
         self.cmd5 = []
-        self.add_dist = []
-        self.trans_error = []
-        self.rot_error = []
-        self.adds = []
-        self.adds_dist = []
         self.mask_ap = []
         self.icp_render = icp_utils.SynRenderer(cfg.cls_type) if cfg.test.icp else None
-
-    def trans_rot_error(self, pose_pred, pose_targets):
-        gt_pose_rot = pose_targets[:3,:3]
-        gt_pose_trans = pose_targets[:3,-1]
-        pred_pose_rot = pose_pred[:3,:3]
-        pred_pose_trans = pose_pred[:3,-1]
-        try:
-            b_rot_angle = rotationMatrixToEulerAngles(gt_pose_rot)
-            reproject_b_rot_angle = rotationMatrixToEulerAngles(pred_pose_rot)
-        except:
-            print("rotation is not orthogonal")
-        trans_error = np.linalg.norm(gt_pose_trans-pred_pose_trans)
-        rot_error = np.absolute(b_rot_angle-reproject_b_rot_angle)
-        self.trans_error.append(trans_error)
-        self.rot_error.append(rot_error)
 
     def projection_2d(self, pose_pred, pose_targets, K, threshold=5):
         model_2d_pred = pvnet_pose_utils.project(self.model, K, pose_pred)
@@ -123,16 +56,6 @@ class Evaluator:
             self.icp_add.append(mean_dist < diameter)
         else:
             self.add.append(mean_dist < diameter)
-        add_error = np.mean(np.linalg.norm(model_pred - model_targets, axis=-1))
-
-        adds_error_index = spatial.cKDTree(model_pred)
-        adds_error, _ = adds_error_index.query(model_targets, k=1)
-        adds_error = np.mean(adds_error)
-
-        self.add_dist.append(add_error)
-        self.add.append(add_error < diameter)
-        self.adds_dist.append(adds_error)
-        self.adds.append(adds_error < diameter)
 
     def cm_degree_5_metric(self, pose_pred, pose_targets):
         translation_distance = np.linalg.norm(pose_pred[:, 3] - pose_targets[:, 3])
@@ -181,28 +104,17 @@ class Evaluator:
         else:
             self.add_metric(pose_pred, pose_gt)
         self.cm_degree_5_metric(pose_pred, pose_gt)
-        self.trans_rot_error(pose_pred, pose_gt)
         self.mask_iou(output, batch)
 
     def summarize(self):
         proj2d = np.mean(self.proj2d)
         add = np.mean(self.add)
-        add_dist = np.mean(self.add_dist)
-        adds = np.mean(self.adds)
-        adds_dist = np.mean(self.adds_dist)
         cmd5 = np.mean(self.cmd5)
-        trans_error = np.mean(self.trans_error)
-        rot_error = np.mean(self.rot_error)
         ap = np.mean(self.mask_ap)
         print('2d projections metric: {}'.format(proj2d))
         print('ADD metric: {}'.format(add))
         print('5 cm 5 degree metric: {}'.format(cmd5))
         print('mask ap70: {}'.format(ap))
-        print('ADD mean distance', add_dist)
-        print('ADD-S metric: {}'.format(adds))
-        print('ADD-S mean distance', adds_dist)
-        print('trans_error: {}'.format(trans_error))
-        print('rot_error: {}'.format(rot_error))
         if self.icp_render is not None:
             print('ADD metric after icp: {}'.format(np.mean(self.icp_add)))
         self.proj2d = []
@@ -210,10 +122,4 @@ class Evaluator:
         self.cmd5 = []
         self.mask_ap = []
         self.icp_add = []
-        self.trans_error = []
-        self.rot_error = []
-        results = {'proj2d': proj2d, 'add': add,'add-s': adds, 'ADD-distance': add_dist, 'ADDS-distance': adds_dist, 'cmd5': cmd5, 'trans_error': trans_error, 'rot_error':rot_error}
-        save_path = None
-        if save_path is not None:
-            np.save(save_path+'/results.npy',results)
-        return {'proj2d': proj2d, 'add': add, 'add-s': adds, 'ADD-distance': add_dist, 'ADDS-distance': adds_dist, 'cmd5': cmd5, 'trans_error': trans_error, 'rot_error':rot_error}
+        return {'proj2d': proj2d, 'add': add, 'cmd5': cmd5, 'ap': ap}

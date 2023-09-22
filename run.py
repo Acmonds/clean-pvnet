@@ -1,6 +1,35 @@
 from lib.config import cfg, args
 import numpy as np
 import os
+import requests
+from tqdm import tqdm
+
+data_root = args.path
+
+def download_file_with_progressbar(url, output_path):
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    response = requests.get(url, stream=True)
+    total_size = int(response.headers.get('content-length', 0))
+    block_size = 1024  # 1 KB
+
+    with open(output_path, 'wb') as file, tqdm(
+        desc=f"Downloading {url}",
+        total=total_size,
+        unit="KB",
+        unit_scale=True,
+        unit_divisor=block_size,
+    ) as bar:
+        for data in response.iter_content(block_size):
+            bar.update(len(data))
+            file.write(data)
+
+
+
+
+
+
+
+
 
 
 def run_rgb():
@@ -63,6 +92,17 @@ def run_evaluate():
     import torch
     from lib.networks import make_network
     from lib.utils.net_utils import load_network
+
+    os.system('rm data/custom')
+    cmd = 'ln -s {} data/custom'.format(args.path)
+    os.system(cmd)
+
+    os.system('rm data/model/pvnet/custom')
+    if args.type == 'l':
+        os.system('ln -s LND data/model/pvnet/custom')
+    elif args.type == 'm':
+        os.system('ln -s MBF data/model/pvnet/custom')
+
 
     torch.manual_seed(0)
 
@@ -215,11 +255,26 @@ def run_render():
     plt.show()
 
 
-def run_custom():
+def run_preprocess():
     from tools import handle_custom_dataset
-    data_root = 'data/custom'
+    data_root = args.path
+
+    data_root = args.path
+
+    if args.type == 'l':
+        download_file_with_progressbar("https://storage.googleapis.com/acmond.com/surgripe/lnd/joint.ply", os.path.join(data_root, 'joint.ply'))
+        download_file_with_progressbar("https://storage.googleapis.com/acmond.com/surgripe/lnd/camera.txt", os.path.join(data_root, 'camera.txt'))
+        download_file_with_progressbar("https://storage.googleapis.com/acmond.com/surgripe/lnd/diameter.txt", os.path.join(data_root, 'diameter.txt'))
+    elif args.type == 'm':
+        # 下载文件到指定的data_root目录
+        download_file_with_progressbar("https://storage.googleapis.com/acmond.com/surgripe/mbf/joint.ply", os.path.join(data_root, 'joint.ply'))
+        download_file_with_progressbar("https://storage.googleapis.com/acmond.com/surgripe/mbf/camera.txt", os.path.join(data_root, 'camera.txt'))
+        download_file_with_progressbar("https://storage.googleapis.com/acmond.com/surgripe/mbf/diameter.txt", os.path.join(data_root, 'diameter.txt'))
+        
+
     handle_custom_dataset.sample_fps_points(data_root)
     handle_custom_dataset.custom_to_coco(data_root)
+
 
 
 def run_detector_pvnet():
@@ -273,5 +328,5 @@ def run_demo():
         visualizer.visualize_demo(output, inp, meta)
 
 if __name__ == '__main__':
-    globals()['run_'+args.type]()
+    globals()['run_'+args.func]()
 

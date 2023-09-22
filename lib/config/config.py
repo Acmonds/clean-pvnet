@@ -146,14 +146,18 @@ def make_cfg(args):
     parse_cfg(cfg, args)
     return cfg
 
-
+TASK_CHOICES = {'l': 'LND', 'm': 'MBF'}
 parser = argparse.ArgumentParser()
-parser.add_argument("--cfg_file", default="configs/default.yaml", type=str)
+parser.add_argument("--cfg_file", default="configs/custom.yaml", type=str)
 parser.add_argument('--test', action='store_true', dest='test', default=False)
-parser.add_argument("--type", type=str, default="")
+parser.add_argument("--func", type=str, default="")
 parser.add_argument('--det', type=str, default='')
 parser.add_argument("opts", default=None, nargs=argparse.REMAINDER)
+parser.add_argument('--type', choices=TASK_CHOICES.keys(), required=True, help='Instrument Type for test.')
+parser.add_argument('--path', help= 'Get path to data root path.')
 args = parser.parse_args()
 if len(args.type) > 0:
     cfg.task = "run"
+
+    
 cfg = make_cfg(args)

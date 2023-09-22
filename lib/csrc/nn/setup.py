@@ -1,6 +1,6 @@
 import os
 
-cuda_include=os.path.join(os.environ.get('CUDA_HOME'), 'include')
+cuda_include=os.path.join('/usr/local/cuda', 'include')  # 或者您的CUDA安装路径
 os.system('nvcc src/nearest_neighborhood.cu -c -o src/nearest_neighborhood.cu.o -x cu -Xcompiler -fPIC -O2 -arch=sm_52 -I {}'.format(cuda_include))
 
 from cffi import FFI

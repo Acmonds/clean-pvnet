@@ -17,7 +17,7 @@ def read_ply_points(ply_path):
 
 
 def sample_fps_points(data_root):
-    ply_path = os.path.join(data_root, 'model.ply')
+    ply_path = os.path.join(data_root, 'joint.ply')
     ply_points = read_ply_points(ply_path)
     fps_points = fps_utils.farthest_point_sampling(ply_points, 8, True)
     np.savetxt(os.path.join(data_root, 'fps.txt'), fps_points)
@@ -48,13 +48,13 @@ def record_ann(model_meta, img_id, ann_id, images, annotations):
     K = model_meta['K']
 
     pose_dir = os.path.join(data_root, 'pose')
-    rgb_dir = os.path.join(data_root, 'rgb')
+    rgb_dir = os.path.join(data_root, 'image')
     mask_dir = os.path.join(data_root, 'mask')
 
-    inds = range(len(os.listdir(rgb_dir)))
+    inds = range(1,len(os.listdir(rgb_dir)))
 
     for ind in tqdm.tqdm(inds):
-        rgb_path = os.path.join(rgb_dir, '{}.jpg'.format(ind))
+        rgb_path = os.path.join(rgb_dir, '{}.png'.format(ind))
 
         rgb = Image.open(rgb_path)
         img_size = rgb.size
@@ -62,7 +62,7 @@ def record_ann(model_meta, img_id, ann_id, images, annotations):
         info = {'file_name': rgb_path, 'height': img_size[1], 'width': img_size[0], 'id': img_id}
         images.append(info)
 
-        pose_path = os.path.join(pose_dir, 'pose{}.npy'.format(ind))
+        pose_path = os.path.join(pose_dir, '{}.npy'.format(ind))
         pose = np.load(pose_path)
         corner_2d = base_utils.project(corner_3d, K, pose)
         center_2d = base_utils.project(center_3d[None], K, pose)[0]
@@ -84,7 +84,7 @@ def record_ann(model_meta, img_id, ann_id, images, annotations):
 
 
 def custom_to_coco(data_root):
-    model_path = os.path.join(data_root, 'model.ply')
+    model_path = os.path.join(data_root, 'joint.ply')
 
     renderer = OpenGLRenderer(model_path)
     K = np.loadtxt(os.path.join(data_root, 'camera.txt'))

@@ -81,7 +81,7 @@ class Resnet18(nn.Module):
         fm=self.conv8s(torch.cat([xfc,x8s],1))
         fm=self.up8sto4s(fm)
         if fm.shape[2]==136:
-            fm = nn.functional.interpolate(fm, (135,180), mode='bilinear', align_corners=False)
+            fm = nn.functional.interpolate(fm, (135,240), mode='bilinear', align_corners=False)
 
         fm=self.conv4s(torch.cat([fm,x4s],1))
         fm=self.up4sto2s(fm)

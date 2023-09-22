@@ -1,3 +1,8 @@
+
+docker run -it --gpus all --name pvnet_dev -v /home/liyangke2014/clean-pvnet:/home/clean-pvnet pvnet_clean:latest
+
+
+
 # PVNet: Pixel-wise Voting Network for 6DoF Pose Estimation
 
 ![introduction](./assets/introduction.png)
