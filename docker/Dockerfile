@@ -32,7 +32,7 @@ RUN cd /home && \
     git clone https://github.com/Acmonds/clean-pvnet clean-pvnet && \
     cd clean-pvnet && \
     pip install --user Cython==0.28.2 && \
-    pip install -r my_requirements.txt && \
+    pip install -r requirements.txt && \
     pip install --user transforms3d
 
 # Execute the setup for your custom C++/CUDA extensions
