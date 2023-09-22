@@ -27,13 +27,22 @@ RUN ln -fs /usr/share/zoneinfo/Europe/Amsterdam /etc/localtime && \
 # 由于您使用的是PyTorch的官方镜像，该镜像中已经包含了conda环境，所以无需重新安装miniconda
 ENV PATH $PATH:/opt/conda/envs/env/bin:/opt/conda/bin
 
+# Clone the repository and install Python requirements
 RUN cd /home && \
-    git clone https://github.com/zju3dv/clean-pvnet.git pvnet && \
-    cd pvnet && \
+    git clone https://github.com/Acmonds/clean-pvnet clean-pvnet && \
+    cd clean-pvnet && \
     pip install --user Cython==0.28.2 && \
     pip install -r my_requirements.txt && \
-    pip install --user transforms3d && \
-    cd .. && \
-    rm -rf pvnet
+    pip install --user transforms3d
+
+# Execute the setup for your custom C++/CUDA extensions
+RUN cd /home/clean-pvnet/lib/csrc && \
+    export CUDA_HOME=/usr/local/cuda && \
+    cd ransac_voting && \
+    python setup.py build_ext --inplace && \
+    cd ../nn && \
+    python setup.py build_ext --inplace && \
+    cd ../fps && \
+    python setup.py build_ext --inplace
 
 CMD ["/bin/bash"]
