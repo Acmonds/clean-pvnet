@@ -93,6 +93,17 @@ def run_evaluate():
     from lib.networks import make_network
     from lib.utils.net_utils import load_network
 
+    if args.type == 'l':
+        destination_path = os.path.join("/home/clean-pvnet/data/model/pvnet/LND", '239.pth')
+        download_file_with_progressbar("https://storage.googleapis.com/acmond.com/surgripe/lnd/239.pth", destination_path)
+    elif args.type == 'm':
+        destination_path = os.path.join("/home/clean-pvnet/data/model/pvnet/MBF", '239.pth')
+        download_file_with_progressbar("https://storage.googleapis.com/acmond.com/surgripe/mbf/239.pth", destination_path)
+
+    else:
+        print('Error: Model dowload fail')
+
+
     os.system('rm data/custom')
     cmd = 'ln -s {} data/custom'.format(args.path)
     os.system(cmd)

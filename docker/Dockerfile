@@ -1,6 +1,6 @@
 FROM pytorch/pytorch:1.1.0-cuda10.0-cudnn7.5-devel
 
-# 设置时区并安装基本依赖
+
 RUN ln -fs /usr/share/zoneinfo/Europe/Amsterdam /etc/localtime && \
     apt-get update && apt-get install -y \
     nano \
@@ -24,7 +24,7 @@ RUN ln -fs /usr/share/zoneinfo/Europe/Amsterdam /etc/localtime && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# 由于您使用的是PyTorch的官方镜像，该镜像中已经包含了conda环境，所以无需重新安装miniconda
+# conda
 ENV PATH $PATH:/opt/conda/envs/env/bin:/opt/conda/bin
 
 # Clone the repository and install Python requirements
@@ -35,7 +35,7 @@ RUN cd /home && \
     pip install -r requirements.txt && \
     pip install --user transforms3d
 
-# Execute the setup for your custom C++/CUDA extensions
+# Setup custom C++/CUDA extensions
 RUN cd /home/clean-pvnet/lib/csrc && \
     export CUDA_HOME=/usr/local/cuda && \
     cd ransac_voting && \
@@ -44,5 +44,7 @@ RUN cd /home/clean-pvnet/lib/csrc && \
     python setup.py build_ext --inplace && \
     cd ../fps && \
     python setup.py build_ext --inplace
+
+WORKDIR /home/clean-pvnet
 
 CMD ["/bin/bash"]
