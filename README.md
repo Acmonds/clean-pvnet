@@ -34,7 +34,7 @@ Run the command below, and the script will automatically download the preprocess
     ```
     python run.py --func evaluate --path /home/clean-pvnet/Dataset/[MBF/LND]/[TEST/TEST_OCC] --type [m/l]
     ```
-    
+
 
 
 ## Data structure:
@@ -44,7 +44,7 @@ Organize the dataset as the following structure:
     ├── /path/to/dataset
     │   ├── model.ply
     │   ├── camera.txt
-    │   ├── diameter.txt  // the object diameter, whose unit is meter
+    │   ├── diameter.txt  
     │   ├── rgb/
     │   │   ├── 0.jpg
     │   │   ├── ...
