@@ -51,7 +51,7 @@ def record_ann(model_meta, img_id, ann_id, images, annotations):
     rgb_dir = os.path.join(data_root, 'image')
     mask_dir = os.path.join(data_root, 'mask')
 
-    inds = range(1,len(os.listdir(rgb_dir)))
+    inds = range(1,len(os.listdir(rgb_dir))+1)
 
     for ind in tqdm.tqdm(inds):
         rgb_path = os.path.join(rgb_dir, '{}.png'.format(ind))
